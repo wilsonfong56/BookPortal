@@ -1,17 +1,38 @@
-version: "3"
+version: "3.8"
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: "book-portal-mysql"
+    environment:
+      MYSQL_ROOT_PASSWORD: "rootpassword"
+      MYSQL_DATABASE: book_portal
+    ports:
+      - "3306:3306"
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+
   book-portal-be:
     image: ugurcanerdogan/book-portal-be:latest
     container_name: "book-portal-be"
+    depends_on:
+      - mysql
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/book_portal?useSSL=false&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=rootpassword
+    restart: unless-stopped
+    command: sh -c "sleep 20 && java -jar /app.jar"
 
   book-portal-fe:
     image: ugurcanerdogan/book-portal-fe:latest
     container_name: "book-portal-fe"
     depends_on:
       - book-portal-be
+    restart: unless-stopped
+
   proxy:
     image: ugurcanerdogan/book-portal-proxy:latest
     container_name: "book-portal-proxy"
-    restart: always
+    restart: unless-stopped
     ports:
       - "80:80"
